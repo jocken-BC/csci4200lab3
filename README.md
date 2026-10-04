@@ -32,15 +32,23 @@ By the end of this lab, you will be able to:
 
 ## 4. Instruction Set Architecture (ISA) Reference
 
-Every instruction word is **exactly 16 bits wide** (2 bytes) and adheres to one of two structural binary layouts:
+Every instruction word is **exactly 16 bits wide** (2 bytes) and adheres to one of three structural binary layouts:
 
-### Layout A: Standard Register / Immediate Format (16-bit)
+### Layout A: Standard Register / Memory Format (16-bit)
+Used by `nop`, `halt`, `rrmovq`, `rmmovq`, `mrmovq`, and `addq`/`subq`.
 
 | Bits 15–12 | Bits 11–8 | Bits 7–4 | Bits 3–0 |
 | :---: | :---: | :---: | :---: |
-| **icode** (Opcode) | **ifun** (Function) | **rA** (Source/Dest) | **rB** / **Imm4** |
+| **icode** (Opcode) | **ifun** (Function) | **rA** (Source Register) | **rB** (Destination Register) |
 
-### Layout B: Jump Format (`jXX`)
+### Layout B: Register-Immediate Format (`irmovq`) (16-bit)
+Used exclusively by `irmovq`. To maximize bit-budget efficiency, the literal 4-bit value is stored where `rA` would normally be, and `rB` acts as the target destination register.
+
+| Bits 15–12 | Bits 11–8 | Bits 7–4 | Bits 3–0 |
+| :---: | :---: | :---: | :---: |
+| **icode** (`0x3`) | **ifun** (`0x0`) | **Imm4** (4-bit Immediate Value) | **rB** (Destination Register) |
+
+### Layout C: Jump Format (`jXX`) (16-bit)
 
 | Bits 15–12 | Bits 11–8 | Bits 7–0 |
 | :---: | :---: | :---: |
@@ -88,10 +96,11 @@ Compare your execution trace output against the provided sample text traces (`te
 ## 6. Post-Lab Deliverable Questions
 Answer the following questions in your lab report submission:
 
-1. **Little-Endian Reconstruction:** If `MEM[0x04] = 0x01` and `MEM[0x05] = 0x61`, what is the complete 16-bit hexadecimal instruction word fetched when `PC = 0x04`? Translate this word into its exact assembly mnemonic and operands.
+1. **Little-Endian Reconstruction:** If `MEM[0x04] = 0x51` and `MEM[0x05] = 0x30`, what is the complete 16-bit hexadecimal instruction word fetched when `PC = 0x04`? Translate this word into its exact assembly mnemonic, immediate value, and target register destination name.
 2. **Byte Separation Constraints:** Explain how your simulator isolates the `rA` and `rB` register identifiers from a single byte of layout memory. What bitwise mask and shift operations did you use?
-3. **Condition Code Activation:** Suppose `%rax` holds `0x0005` and `%rcx` holds `0x0005`. If the instruction `subq %rax, %rcx` executes, describe the resulting mathematical subtraction context and list the final values assigned to `ZF` and `SF`.
-4. **Memory Swapping Alignment:** Because our simulated memory is byte-addressable (`uint8_t`), storing a 16-bit register value via `rmmovq` spans two slots. If `%rax = 0xABCD` and `%rbx = 0x10`, outline exactly what values are written to `MEM[0x10]` and `MEM[0x11]`.
+3. **Byte Separation Constraints:** Explain how your simulator dynamically checks the instruction opcode (`icode`) before decoding register IDs. Why does the instruction `irmovq` handle bits 7–4 differently than an `addq` instruction?
+4. **Condition Code Activation:** Suppose `%rax` holds `0x0005` and `%rcx` holds `0x0005`. If the instruction `subq %rax, %rcx` executes, describe the resulting mathematical subtraction context, which register field gets updated with the result, and list the final values assigned to `ZF` and `SF`.
+5. **Memory Swapping Alignment:** Because our simulated memory is byte-addressable (`uint8_t`), storing a 16-bit register value via `rmmovq` spans two slots. If `%rax = 0xABCD` and `%rbx = 0x10`, outline exactly what values are written to `MEM[0x10]` and `MEM[0x11]`.
 
 ---
 
@@ -105,8 +114,8 @@ For extra credit, expand your implementation to support the full combinational m
 
 ### 1. Extended Logicals (`icode = 0x6`)
 Extend your `OPq` decoder switch statement to support the bitwise logic function codes:
-* `ifun = 0x2`: **andq rA, rB** → `R[rB] = R[rB] & R[rA]` (Updates `ZF`, `SF`; clears `OF = 0`)
-* `ifun = 0x3`: **xorq rA, rB** → `R[rB] = R[rB] ^ R[rA]` (Updates `ZF`, `SF`; clears `OF = 0`)
+* `ifun = 0x2`: **andq rA, rB** → `R[rB] = R[rB] & R[rA]` (Updates `ZF`, `SF`; explicitly clears `OF = 0`)
+* `ifun = 0x3`: **xorq rA, rB** → `R[rB] = R[rB] ^ R[rA]` (Updates `ZF`, `SF`; explicitly clears `OF = 0`)
 
 ### 2. Full Conditional Jumps (`icode = 0x7`)
 Extend your `jXX` branch evaluation to parse and validate signed integer inequalities by implementing the full combinational logic gating matrices:
