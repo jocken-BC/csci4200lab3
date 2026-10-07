@@ -96,11 +96,11 @@ Compare your execution trace output against the provided sample text traces (`te
 ## 6. Post-Lab Deliverable Questions
 Answer the following questions in your lab report submission:
 
-1. **Little-Endian Reconstruction:** If `MEM[0x04] = 0x51` and `MEM[0x05] = 0x30`, what is the complete 16-bit hexadecimal instruction word fetched when `PC = 0x04`? Translate this word into its exact assembly mnemonic, immediate value, and target register destination name.
+1. **Little-Endian Reconstruction:** If `MEM[0x04] = 0x34`, `MEM[0x05] = 0x12`, and `%rbx = 0x04`, what value does `%rax` contain after executing the instruction `mrmovq (%rbx), %rax`?
 2. **Byte Separation Constraints:** Explain how your simulator isolates the `rA` and `rB` register identifiers from a single byte of layout memory. What bitwise mask and shift operations did you use?
 3. **Byte Separation Constraints:** Explain how your simulator dynamically checks the instruction opcode (`icode`) before decoding register IDs. Why does the instruction `irmovq` handle bits 7–4 differently than an `addq` instruction?
 4. **Condition Code Activation:** Suppose `%rax` holds `0x0005` and `%rcx` holds `0x0005`. If the instruction `subq %rax, %rcx` executes, describe the resulting mathematical subtraction context, which register field gets updated with the result, and list the final values assigned to `ZF` and `SF`.
-5. **Memory Swapping Alignment:** Because our simulated memory is byte-addressable (`uint8_t`), storing a 16-bit register value via `rmmovq` spans two slots. If `%rax = 0xABCD` and `%rbx = 0x10`, outline exactly what values are written to `MEM[0x10]` and `MEM[0x11]`.
+5. **Memory Swapping Alignment:** Because our simulated memory is byte-addressable (`uint8_t`), storing a 16-bit register value via `rmmovq` spans two slots. If `%rax = 0xABCD` and `%rbx = 0x10`, outline exactly what values are written to `MEM[0x10]` and `MEM[0x11]` after executing `rmmovq %rax, (%rbx)`?
 
 ---
 
@@ -109,7 +109,7 @@ Zip together your completed `y86_mini_sim.c` file and a PDF containing the answe
 
 ---
 
-## Optional Extra Credit: Complete ISA Emulation (up to +15 pts)
+## Optional Extra Credit: Complete ISA Emulation (up to +20 pts)
 For extra credit, expand your implementation to support the full combinational matrix of logical operations and relative inequality jumps specified in Chapter 4 of the textbook.
 
 ### 1. Extended Logicals (`icode = 0x6`)
